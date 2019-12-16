@@ -100,6 +100,9 @@ jobs:
           svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/v2ray software/v2ray
           git clone https://github.com/kuoruan/luci-app-v2ray software/luci-app-v2ray
           
+          # OpenAppFilter
+          git clone https://github.com/destan19/OpenAppFilter software/OpenAppFilter
+          
           # k3-wifi-firmware  
           svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/k3-brcmfmac4366c-firmware software/k3-brcmfmac4366c-firmware
           pushd software/k3-brcmfmac4366c-firmware/files/lib/firmware/brcm
@@ -125,26 +128,8 @@ jobs:
           CONFIG_TARGET_bcm53xx_DEVICE_phicomm-k3=y
           CONFIG_TARGET_BOARD="bcm53xx"
           CONFIG_PACKAGE_k3wifi=y
+          # CONFIG_PACKAGE_brcmfmac-firmware-4366c0-pcie is not set
           # CONFIG_TARGET_bcm53xx_Generic is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-ac56u is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-ac68u is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-ac87u is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-n18u is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wxr-1900dhp is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wzr-600dhp2 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wzr-900dhp is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wzr-1750dhp is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_dlink-dir-885l is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_linksys-ea6500-v2 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r6250 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r6300-v2 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r7000 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r7900 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r8000 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_smartrg-sr400ac is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_tenda-ac9 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_tplink-archer-c5-v2 is not set
-          # CONFIG_TARGET_bcm53xx_DEVICE_tplink-archer-c9-v1 is not set
           EOF
 
           # LuCI插件选择:
@@ -152,6 +137,7 @@ jobs:
           CONFIG_PACKAGE_luci-app-adbyby-plus=y
           CONFIG_PACKAGE_luci-app-guest-wifi=y
           CONFIG_PACKAGE_luci-app-luci-app-vlmcsd=y
+          CONFIG_PACKAGE_luci-app-oaf=y
           CONFIG_PACKAGE_v2ray=y
           CONFIG_PACKAGE_luci-app-v2ray=y
           CONFIG_PACKAGE_udp2raw-tunnel=y
@@ -177,7 +163,6 @@ jobs:
           cat >> .config <<EOF
           CONFIG_PACKAGE_ipv6helper=y
           # CONFIG_PACKAGE_dnsmasq is not set
-          CONFIG_PACKAGE_dnsmasq-dhcpv6=y
           CONFIG_PACKAGE_dnsmasq-full=y
           CONFIG_PACKAGE_dnsmasq_full_dhcp=y
           CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
