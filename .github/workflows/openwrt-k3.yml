@@ -1,0 +1,239 @@
+
+name: 编译 OpenWrt-k3
+
+on:
+  push:
+    branches: 
+      - master
+  release:
+      types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 校验本地文件
+        uses: actions/checkout@master
+        with:
+          ref: master
+
+      - name: 安装编译环境
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          docker rmi `docker images -q`
+      - name: 清理系统环境
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          echo "Deleting files, please wait ..."
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /etc/mysql \
+            /etc/php
+          sudo -E apt-get -y purge \
+            azure-cli \
+            ghc* \
+            zulu* \
+            hhvm \
+            llvm* \
+            firefox \
+            google* \
+            dotnet* \
+            powershell \
+            openjdk* \
+            mysql* \
+            php*
+      - name: 更新软件列表
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt-get update
+      - name: 安装编译所需环境
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt-get -y install wget subversion build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler
+
+      - name: 进行安装后的清理
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt-get -y autoremove --purge
+          sudo -E apt-get clean
+
+      - name: 克隆仓库
+        env: 
+          REPO_URL: https://github.com/openwrt/openwrt
+          REPO_BRANCH: openwrt-19.07
+        run: git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+
+      - name: 构建自定义文件结构
+        run: |
+          cd openwrt
+          cd package
+          mkdir software
+
+          # luci-theme-rosy
+          git clone https://github.com/rosywrt/luci-theme-rosy software/luci-theme-rosy
+
+          # KMS
+          git clone https://github.com/flytosky-f/openwrt-vlmcsd software/vlmcsd
+          # git clone https://github.com/flytosky-f/luci-app-vlmcsd software/luci-app-vlmcsd
+          svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-vlmcsd software/luci-app-vlmcsd
+          
+          # guest-wifi
+          # https://openwrt.org/docs/guide-user/network/wifi/guestwifi/guest-wlan-webinterface
+          svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-guest-wifi software/luci-app-guest-wifi
+          
+          # adbyby-plus
+          svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/adbyby software/adbyby
+          svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/luci-app-adbyby-plus software/luci-app-adbyby-plus
+          
+          # udp2raw-tunnel
+          git clone https://github.com/qq523407234/openwrt-udp2raw software/udp2raw-tunnel
+          git clone https://github.com/qq523407234/luci-app-udp2raw software/luci-app-udp2raw
+          
+          # v2ray
+          # https://github.com/kuoruan/openwrt-v2ray/releases
+          svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/v2ray software/v2ray
+          git clone https://github.com/kuoruan/luci-app-v2ray software/luci-app-v2ray
+          
+          # k3-wifi-firmware  
+          svn checkout https://github.com/coolsnowwolf/lede/trunk/package/lean/k3-brcmfmac4366c-firmware software/k3-brcmfmac4366c-firmware
+          pushd software/k3-brcmfmac4366c-firmware/files/lib/firmware/brcm
+          wget --no-check-certificate https://github.com/Hill-98/phicommk3-firmware/raw/master/brcmfmac4366c-pcie.bin.69027 -O brcmfmac4366c-pcie.bin
+          popd
+
+      - name: 构建编译扩展环境
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: 导入自定义配置
+        run: |
+          cd openwrt
+          rm -f ./.config*
+          touch ./.config
+
+          # K3
+          sed -i 's/192.168.1.1/192.168.50.1/g' package/base-files/files/bin/config_generate
+          cat >> .config <<EOF
+          CONFIG_TARGET_bcm53xx=y
+          CONFIG_TARGET_bcm53xx_DEVICE_phicomm-k3=y
+          CONFIG_TARGET_BOARD="bcm53xx"
+          CONFIG_PACKAGE_k3wifi=y
+          # CONFIG_TARGET_bcm53xx_Generic is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-ac56u is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-ac68u is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-ac87u is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_asus-rt-n18u is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wxr-1900dhp is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wzr-600dhp2 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wzr-900dhp is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_buffalo-wzr-1750dhp is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_dlink-dir-885l is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_linksys-ea6500-v2 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r6250 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r6300-v2 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r7000 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r7900 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_netgear-r8000 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_smartrg-sr400ac is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_tenda-ac9 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_tplink-archer-c5-v2 is not set
+          # CONFIG_TARGET_bcm53xx_DEVICE_tplink-archer-c9-v1 is not set
+          EOF
+
+          # LuCI插件选择:
+          cat >> .config <<EOF
+          CONFIG_PACKAGE_luci-app-adbyby-plus=y
+          CONFIG_PACKAGE_luci-app-guest-wifi=y
+          CONFIG_PACKAGE_luci-app-luci-app-vlmcsd=y
+          CONFIG_PACKAGE_v2ray=y
+          CONFIG_PACKAGE_luci-app-v2ray=y
+          CONFIG_PACKAGE_udp2raw-tunnel=y
+          CONFIG_PACKAGE_luci-app-udp2raw=y
+          EOF
+
+          # LuCI主题:
+          cat >> .config <<EOF
+          CONFIG_PACKAGE_luci-theme-rosy=y
+          EOF
+
+          # 多文件系统支持:
+          cat >> .config <<EOF
+          CONFIG_PACKAGE_kmod-fs-nfs=y
+          CONFIG_PACKAGE_kmod-fs-nfs-common=y
+          CONFIG_PACKAGE_kmod-fs-nfs-v3=y
+          CONFIG_PACKAGE_kmod-fs-nfs-v4=y
+          CONFIG_PACKAGE_kmod-fs-ntfs=y
+          CONFIG_PACKAGE_kmod-fs-squashfs=y
+          EOF
+
+          # ipv6 dnsmasq_full
+          cat >> .config <<EOF
+          CONFIG_PACKAGE_ipv6helper=y
+          # CONFIG_PACKAGE_dnsmasq is not set
+          CONFIG_PACKAGE_dnsmasq-dhcpv6=y
+          CONFIG_PACKAGE_dnsmasq-full=y
+          CONFIG_PACKAGE_dnsmasq_full_dhcp=y
+          CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
+          # CONFIG_PACKAGE_dnsmasq_full_dnssec is not set
+          CONFIG_PACKAGE_dnsmasq_full_auth=y
+          CONFIG_PACKAGE_dnsmasq_full_ipset=y
+          CONFIG_PACKAGE_dnsmasq_full_conntrack=y
+          CONFIG_PACKAGE_dnsmasq_full_noid=y
+          # CONFIG_PACKAGE_dnsmasq_full_broken_rtc is not set
+          # CONFIG_PACKAGE_dnsmasq_full_tftp is not set
+          EOF
+
+          # 固件压缩:
+          cat >> .config <<EOF
+          CONFIG_TARGET_IMAGES_GZIP=y
+          EOF
+
+          # 取消编译VMware镜像以及镜像填充:
+          cat >> .config <<EOF
+          # CONFIG_TARGET_IMAGES_PAD is not set
+          # CONFIG_VMDK_IMAGES is not set
+          EOF
+
+          # # USB3.0支持:
+          # cat >> .config <<EOF
+          # CONFIG_PACKAGE_kmod-usb-ohci=y
+          # CONFIG_PACKAGE_kmod-usb-ohci-pci=y
+          # CONFIG_PACKAGE_kmod-usb2=y
+          # CONFIG_PACKAGE_kmod-usb2-pci=y
+          # CONFIG_PACKAGE_kmod-usb3=y
+          # EOF
+
+          sed -i 's/^[ \t]*//g' ./.config
+          make defconfig
+
+      - name: 下载编译所需源码
+        run: |
+          cd openwrt
+          make download -j8
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
+
+      - name: 进行固件编译
+        run: |
+          cd openwrt
+          echo -e "$(nproc) thread build."
+          make -j$(nproc) V=s
+
+      - name: 提取必要的文件
+        run: |
+          rm -rf ./firmware/
+          mkdir -p ./firmware/
+          find ./openwrt/bin/targets/ -name "*phicomm-k3-squashfs*" | xargs -i mv -f {} ./firmware/
+
+      - name : 上传固件
+        uses: actions/upload-artifact@master
+        with:
+          name: OpenWrt firmware
+          path: firmware
