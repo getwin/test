@@ -56,10 +56,12 @@ jobs:
 
           # UnblockNeteaseMusicGo (包含后端和前端)
           git clone https://github.com/cnsilvan/luci-app-unblockneteasemusic software/unblock-neteasemusic-go
+          ## $(STAGING_DIR_HOST)/bin/upx --lzma --best $(GO_PKG_BUILD_BIN_DIR)/UnblockNeteaseMusic
+          sed -i '/.*upx /d' software/unblock-neteasemusic-go/UnblockNeteaseMusic/Makefile
 
           # smartdns
-          git clone https://github.com/getwin/openwrt-smartdns package/smartdns
-          git clone https://github.com/pymumu/luci-app-smartdns package/luci-app-smartdns
+          git clone https://github.com/getwin/openwrt-smartdns software/smartdns
+          git clone https://github.com/pymumu/luci-app-smartdns software/luci-app-smartdns
 
           # KMS
           git clone https://github.com/flytosky-f/openwrt-vlmcsd software/vlmcsd
@@ -99,6 +101,10 @@ jobs:
           # 默认ip 主机名
           sed -i 's/192.168.1.1/192.168.50.1/g' package/base-files/files/bin/config_generate
           sed -i "s/'OpenWrt'/'Route'/g" package/base-files/files/bin/config_generate
+
+          # update golang
+          rm -rf feeds/packages/lang/golang
+          svn checkout https://github.com/openwrt/packages/trunk/lang/golang feeds/packages/lang/golang
 
           # K3
           cat >> .config <<EOF
@@ -176,7 +182,7 @@ jobs:
           # CONFIG_V2RAY_JSON_NONE is not set
           CONFIG_V2RAY_EXCLUDE_V2CTL=y
           CONFIG_V2RAY_EXCLUDE_ASSETS=y
-          CONFIG_V2RAY_COMPRESS_UPX=y
+          # CONFIG_V2RAY_COMPRESS_UPX is not set
           CONFIG_V2RAY_DISABLE_NONE=y
           # CONFIG_V2RAY_DISABLE_CUSTOM is not set
 
