@@ -153,11 +153,41 @@ jobs:
           CONFIG_PACKAGE_luci-app-luci-app-vlmcsd=y
           CONFIG_PACKAGE_udp2raw-tunnel=y
           CONFIG_PACKAGE_luci-app-udp2raw=y
+
+          CONFIG_PACKAGE_trojan=y
+          CONFIG_PACKAGE_shadowsocksr-libev-alt=y
+          CONFIG_PACKAGE_shadowsocks-libev-config=y
+          CONFIG_PACKAGE_shadowsocks-libev-ss-local=y
+          CONFIG_PACKAGE_shadowsocks-libev-ss-redir=y
+          # CONFIG_PACKAGE_shadowsocks-libev-ss-rules is not set
+          # CONFIG_PACKAGE_shadowsocks-libev-ss-server is not set
+          # CONFIG_PACKAGE_shadowsocks-libev-ss-tunnel is not set
+          CONFIG_PACKAGE_ipt2socks=y
+          CONFIG_PACKAGE_dns2socks=y
+          CONFIG_PACKAGE_haproxy=y
+          CONFIG_PACKAGE_chinadns-ng=y
+          CONFIG_PACKAGE_pdnsd-alt=y
+          CONFIG_PACKAGE_tcping=y
+
+          CONFIG_PACKAGE_v2ray=y
+          # CONFIG_V2RAY_COMPRESS_GOPROXY is not set
+          # CONFIG_V2RAY_JSON_V2CTL is not set
+          CONFIG_V2RAY_JSON_INTERNAL=y
+          # CONFIG_V2RAY_JSON_NONE is not set
+          CONFIG_V2RAY_EXCLUDE_V2CTL=y
+          CONFIG_V2RAY_EXCLUDE_ASSETS=y
+          CONFIG_V2RAY_COMPRESS_UPX=y
+          CONFIG_V2RAY_DISABLE_NONE=y
+          # CONFIG_V2RAY_DISABLE_CUSTOM is not set
+
+          CONFIG_PACKAGE_UnblockNeteaseMusic=y
           CONFIG_PACKAGE_luci-app-unblockneteasemusic=y
+
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ipt2socks=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks=y
-          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ShadowsocksR=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Shadowsocks_socks=y
+          CONFIG_PACKAGE_simple-obfs=y
+          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ShadowsocksR=y
           # CONFIG_PACKAGE_luci-app-passwall_INCLUDE_ShadowsocksR_socks is not set
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_V2ray=y
           CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Trojan=y
@@ -243,14 +273,14 @@ jobs:
             make -j1 V=s
         continue-on-error: true
 
-      - name: 提取必要的文件
+      - name: 提取文件
         if: always()
         run: |
           rm -rf ./firmware/
           mkdir -p ./firmware/
           find ./openwrt/bin/targets/ -name "*phicomm-k3-*" | xargs -i mv -f {} ./firmware/
 
-      - name : 上传固件
+      - name : 上传文件
         if: always()
         uses: actions/upload-artifact@master
         with:
